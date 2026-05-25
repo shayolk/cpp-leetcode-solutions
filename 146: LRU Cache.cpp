@@ -1,107 +1,78 @@
 class LRUCache {
-    struct Node {
+    struct Data {
         int key;
-        int value;
-        Node* prev;
-        Node* next;
+        int val;
+        Data* prev;
+        Data* next;
 
-        Node(int k = -2, int v = -1) {
-            key = k;
-            value = v;
-            prev = NULL;
-            next = NULL;
-        }
-
-        int getKey() {
-            return key;
-        }
-
-        int getValue() {
-            return value;
-        }
-
-        void setValue(int v) {
-            value = v;
-        }
-
-        Node* getPrev() {
-            return prev;
-        }
-
-        void setPrev(Node* p) {
-            prev = p;
-        }
-
-        Node* getNext() {
-            return next;
-        }
-
-        void setNext(Node* n) {
-            next = n;
+        Data(int key, int val, Data* prev = nullptr, Data* next = nullptr) {
+            this->key = key;
+            this->val = val;
+            this->prev = prev;
+            this->next = next;
         }
     };
 
-    int capacity;
-    Node* head;
-    Node* tail;
-    map<int,Node*> pos;
+    int cur_cap, tot_cap;
+    Data* first;
+    Data* last;
+    map<int,Data*> mp_loc;
 
-    void insert(Node* node) {
-        node->setPrev(head);
-        node->setNext(head->getNext());
-        head->getNext()->setPrev(node);
-        head->setNext(node);
+    void add(Data* data) {
+        mp_loc[data->key] = data;
+        last->prev->next = data;
+        data->prev = last->prev;
+        data->next = last;
+        last->prev = data;
     }
 
-    void remove(Node* node) {
-        Node* prev = node->getPrev();
-        Node* next = node->getNext();
-        if(prev) {
-            prev->setNext(next);
-        }
-        if(next) {
-            next->setPrev(prev);
-        }
+    void rem() {
+        mp_loc.erase(first->next->key);
+        Data* tmp = first->next;
+        first->next = first->next->next;
+        first->next->prev = first;
+        delete tmp;
+    }
+
+    void use(Data* data) {
+        data->prev->next = data->next;
+        data->next->prev = data->prev;
+        add(data);
     }
 
 public:
     LRUCache(int capacity) {
-        this->capacity = capacity;
-        head = new Node();
-        tail = new Node();
-        head->setNext(tail);
-        tail->setPrev(head);
+        cur_cap = 0;
+        tot_cap = capacity;
+        first = new Data(-1, -1);
+        last = new Data(-1, -1);
+        first->next = last;
+        last->prev = first;
     }
     
     int get(int key) {
-        if(!pos.count(key)) {
+        if (!mp_loc.count(key)) {
             return -1;
         }
-        Node* node = pos[key];
-        remove(node);
-        insert(node);
-        return node->getValue();
+        Data* data = mp_loc[key];
+        use(data);
+        return data->val;
     }
     
     void put(int key, int value) {
-        if(pos.count(key)) {
-            Node* node = pos[key];
-            node->setValue(value);
-            remove(node);
-            insert(node);
+        if (mp_loc.count(key)) {
+            Data* data = mp_loc[key];
+            data->val = value;
+            use(data);
             return;
         }
-        if(capacity == 0) {
-            Node* tmp = tail->prev;
-            pos.erase(tmp->getKey());
-            remove(tmp);
-            delete(tmp);
-            ++capacity;
+        if (cur_cap == tot_cap) {
+            --cur_cap;
+            rem();
         }
-        Node* node = new Node(key, value);
-        pos[key] = node;
-        insert(node);
-        --capacity;
+        ++cur_cap;
+        Data* data = new Data({key, value});
+        add(data);
     }
 };
 
