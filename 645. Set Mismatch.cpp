@@ -1,19 +1,30 @@
 class Solution {
 public:
     vector<int> findErrorNums(vector<int>& nums) {
-        sort(nums.begin(), nums.end());
-        int n = nums.size(), rep = -1;
-        for (int i = 1; i < n; ++i) {
-            if (nums[i] == nums[i - 1]) {
-                rep = nums[i];
-                break;
+        for (int num: nums) {
+            nums[abs(num) - 1] *= -1;
+        }
+        int rep = -1, miss = -1;
+        int n = nums.size();
+        for (int i = 0; i < n; ++i) {
+            if (nums[i] > 0) {
+                if (rep == -1) {
+                    rep = i + 1;
+                } else {
+                    miss = i + 1;
+                    break;
+                }
             }
         }
-        int miss = rep;
-        for (int i = 0; i < n; ++i) {
-            miss ^= (i + 1);
-            miss ^= nums[i];
+        int cnt = 0;
+        for (int num: nums) {
+            if (abs(num) == rep) {
+                ++cnt;
+            }
         }
-        return {rep, miss};
+        if (cnt == 2) {
+            return {rep, miss};
+        }
+        return {miss, rep};
     }
 };
